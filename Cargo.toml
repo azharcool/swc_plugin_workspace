@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "swc_plugin","runner"
+]
+
+resolver = "2"
+
+[workspace.dependencies]
+swc_core = "58.0.4"

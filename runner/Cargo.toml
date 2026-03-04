@@ -1,0 +1,8 @@
+[package]
+name = "runner"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+swc_plugin = { path = "../swc_plugin" }
+swc_core = { workspace = true, features = ["ecma_parser", "ecma_visit", "ecma_codegen", "ecma_ast"] }

@@ -1,0 +1,10 @@
+[package]
+name = "swc_plugin"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+swc_core = { workspace = true, features = ["ecma_plugin_transform", "ecma_visit", "ecma_ast"] }

@@ -1,17 +1,28 @@
-use swc_core::ecma::{
-    ast::*,
-    visit::{VisitMut, VisitMutWith},
+pub mod logger;
+//pub mod plugin1;
+pub mod plugin2;
+
+use swc_core::ecma::ast::*;
+use swc_core::ecma::visit::VisitMutWith;
+use swc_core::plugin::{
+    metadata::TransformPluginMetadataContextKind, plugin_transform,
+    proxies::TransformPluginProgramMetadata,
 };
 
-pub struct MyPlugin;
+//pub use plugin1::MyPlugin;
+pub use plugin2::MyPlugin2;
 
-impl VisitMut for MyPlugin {
-    fn visit_mut_program(&mut self, node: &mut Program) {
-        println!("Visiting program node: {:?}", node);
-        // You can modify the AST here as needed
-        println!("program node visited successfully!");
-        
-        // Continue visiting the rest of the AST
-        node.visit_mut_children_with(self);
+#[plugin_transform]
+pub fn process_program(mut program: Program, metadata: TransformPluginProgramMetadata) -> Program {
+    //let mut plugin = MyPlugin;
+    //program.visit_mut_with(&mut plugin);
+
+    if let Some(filename) = metadata.get_context(&TransformPluginMetadataContextKind::Filename) {
+        if filename.ends_with("signup/page.tsx") {
+            let mut plugin2 = MyPlugin2;
+            program.visit_mut_with(&mut plugin2);
+        }
     }
+
+    program
 }

@@ -6,7 +6,7 @@ use swc_core::{
     },
 };
 
-use swc_plugin::MyPlugin;
+use swc_plugin::MyPlugin2;
 
 fn main(){
     let cm: Lrc<SourceMap> = Default::default();
@@ -41,7 +41,7 @@ fn main(){
         }
     };
 
-    let mut plugin = MyPlugin;
+    let mut plugin = MyPlugin2::new(true);
     program.visit_mut_with(&mut plugin);
     
 

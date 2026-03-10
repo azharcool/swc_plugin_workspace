@@ -2,13 +2,54 @@ use swc_core::ecma::{
     ast::*,
     visit::{VisitMut, VisitMutWith},
 };
-use swc_core::common::{DUMMY_SP, SyntaxContext};
+use swc_core::common::{DUMMY_SP, SyntaxContext, SourceMap};
+use swc_core::common::sync::Lrc;
+use swc_core::ecma::codegen::{text_writer::JsWriter, Emitter, Config};
 
-pub struct MyPlugin2;
+use crate::log_info;
+
+pub struct MyPlugin2 {
+    debug: bool,
+}
+
+impl MyPlugin2 {
+    pub fn new(debug: bool) -> Self {
+        MyPlugin2 { debug }
+    }
+    
+
+    // Helper function to convert AST back to code for logging
+    fn module_to_code(&self, module: &Module) -> String {
+        let cm: Lrc<SourceMap> = Default::default();
+        let mut buf = vec![];
+        {
+            let wr = JsWriter::new(cm.clone(), "\n",&mut buf, None);
+            let mut emitter = Emitter {
+                cfg: Config::default(),
+                cm: cm.clone(),
+                comments: None,
+                wr
+            };
+            
+            emitter.emit_module(module).unwrap_or_else(|e| {
+                log_info!("module_to_code", "Error generating code: {:?}", e);
+            });
+        }
+        
+        String::from_utf8(buf).unwrap_or_else(|_| "<invalid UTF-8>".into())
+    }
+}
 
 impl VisitMut for MyPlugin2 {
     
 fn visit_mut_module(&mut self, module: &mut Module) {
+    
+    // --- Capture BEFORE code for debugging ---
+    let before_code = if self.debug {
+        Some(self.module_to_code(module))
+    } else {
+        None
+    };
     let mut signup_import_index: Option<usize> = None;
 
     for (i, item) in module.body.iter_mut().enumerate() {
@@ -90,6 +131,14 @@ fn visit_mut_module(&mut self, module: &mut Module) {
     }
 
     module.visit_mut_children_with(self);
+    
+    if self.debug {
+        let after_code = self.module_to_code(module);
+
+        if let Some(before) = before_code {
+            log_info!("transform", "\n\n====================== BEFORE======================\n\n{}\n\n====================== AFTER ======================\n\n{}\n\n", before, after_code);
+        }
+    }
 }   
 
 fn visit_mut_jsx_element(&mut self, jsx: &mut JSXElement) {

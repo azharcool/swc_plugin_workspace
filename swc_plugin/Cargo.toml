@@ -4,12 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [lib]
+name = "swc_plugin_debug"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-swc_core = { workspace = true, features = ["ecma_plugin_transform", "ecma_visit", "ecma_ast"] }
+swc_core = { workspace = true, features = ["ecma_plugin_transform", "ecma_visit", "ecma_ast", "__utils", "ecma_codegen"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+log = "0.4"
+simplelog = "0.12"
 
 [dev-dependencies]
 swc_core = { workspace = true, features = ["ecma_parser", "ecma_visit", "testing", "ecma_ast"]}

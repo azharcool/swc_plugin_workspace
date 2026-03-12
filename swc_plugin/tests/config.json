@@ -1,0 +1,70 @@
+{
+  "themes": {
+    "base": {
+      "name": "base",
+      "package": "base-package",
+      "overrides": [
+        {
+          "directive": "server",
+          "type": "page",
+          "importDeclaration": {
+            "source": "signup/page.tsx",
+            "specifier": {
+              "type": "ImportDefaultSpecifier",
+              "name": "SignUp"
+            }
+          },
+          "target": {
+            "type": "component",
+            "directive": "client",
+            "importDeclaration": {
+              "source": "@znode/custom1-package/component/signup",
+              "specifier": {
+                "type": "ImportSpecifier",
+                "name": "SignUp"
+              }
+            }
+          },
+          "themes": [
+            {
+              "package": "custom1",
+              "type": "component",
+              "directive": "client",
+              "importDeclaration": {
+                "source": "@znode/custom1-package/component/signup",
+                "specifier": {
+                  "type": "ImportSpecifier",
+                  "name": "SignUp"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Override only happen in base-package"
+    }
+  },
+  "themeNameResolver": {
+    "server": {
+      "directive": "server-only",
+      "importDeclaration": {
+        "source": "@znode/utils/theme-resolver/theme-resolver.server",
+        "specifier": {
+          "type": "ImportSpecifier",
+          "name": "getThemeCookieServer"
+        }
+      }
+    },
+    "client": {
+      "directive": "client-only",
+      "importDeclaration": {
+        "source": "@znode/utils/theme-resolver/theme-resolver.client",
+        "specifier": {
+          "type": "ImportSpecifier",
+          "name": "getThemeCookieClient"
+        }
+      }
+    }
+  },
+  "debug": true
+}

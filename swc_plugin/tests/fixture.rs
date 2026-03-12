@@ -11,7 +11,7 @@ use swc_plugin_debug::file_logger::init_logger;
 #[fixture("tests/fixture/**/input.tsx")]
 fn fixture(input: PathBuf) {
     init_logger();
-    let output = input.with_file_name("output.tsx");
+    let output = input.with_file_name("output.js");
 
     // Read Json file
     let config_str = fs::read_to_string("tests/config.json").expect("Failed to read config.json");
@@ -26,7 +26,7 @@ fn fixture(input: PathBuf) {
             tsx: true,
             ..Default::default()
         }),
-        &|_| visit_mut_pass(PluginTheme::new(&config, filename.to_string(), true)),
+        &move |_| visit_mut_pass(PluginTheme::new(config.clone(), filename.clone())),
         &input,
         &output,
         FixtureTestConfig::default(),

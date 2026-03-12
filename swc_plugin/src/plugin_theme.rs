@@ -8,15 +8,14 @@ use swc_core::ecma::{
     codegen::{text_writer::JsWriter, Config, Emitter},
 };
 
-pub struct PluginTheme<'a> {
-    pub config: &'a PluginConfig,
+pub struct PluginTheme {
+    pub config: PluginConfig,
     pub filename: String,
-    pub debug: bool,
 }
 
-impl<'a> PluginTheme<'a> {
-    pub fn new(config: &'a PluginConfig, filename: String, debug: bool) -> Self {
-        Self { config, filename, debug }
+impl PluginTheme {
+    pub fn new(config: PluginConfig, filename: String) -> Self {
+        Self { config, filename }
     }
 
     fn capitalize(s: &str) -> String {
@@ -177,11 +176,11 @@ impl<'a> PluginTheme<'a> {
     }
 }
 
-impl<'a> VisitMut for PluginTheme<'a> {
+impl VisitMut for PluginTheme {
 
     fn visit_mut_module(&mut self, module: &mut Module) {
 
-        let before = if self.debug {
+        let before = if self.config.debug {
             Some(self.module_to_code(module))
         } else {
             None
@@ -199,7 +198,7 @@ impl<'a> VisitMut for PluginTheme<'a> {
 
         module.visit_mut_children_with(self);
 
-        if self.debug {
+        if self.config.debug {
             if let Some(before_code) = before {
                 let after = self.module_to_code(module);
 

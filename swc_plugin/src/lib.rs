@@ -23,7 +23,7 @@ pub fn process_program(mut program: Program, metadata: TransformPluginProgramMet
 
     if let Some(filename) = metadata.get_context(&TransformPluginMetadataContextKind::Filename) {
         log::debug!("Processing file: {:?}", filename);
-        let mut plugin_theme = PluginTheme::new(&plugin_config, filename, true);
+        let mut plugin_theme = PluginTheme::new(plugin_config, filename);
         program.visit_mut_with(&mut plugin_theme);
     }
 

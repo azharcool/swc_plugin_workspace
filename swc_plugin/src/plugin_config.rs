@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Default, Debug, Clone)]
 pub struct PluginConfig {
     #[serde(default)]
     pub themes: HashMap<String, ThemeConfig>,
@@ -13,7 +13,7 @@ pub struct PluginConfig {
     pub debug: bool,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ThemeConfig {
     pub name: String,
     pub package: String,
@@ -21,7 +21,7 @@ pub struct ThemeConfig {
     pub description: String
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct OverrideConfig {
     pub directive: DirectiveType,
 
@@ -34,13 +34,13 @@ pub struct OverrideConfig {
     pub themes: Vec<Theme>
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ImportDeclarationConfig {
     pub source: String,
     pub specifier: Specifier,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Theme {
     pub package: String,
     #[serde(rename = "type")]
@@ -50,7 +50,7 @@ pub struct Theme {
     pub import_declaration: ImportDeclarationConfig
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Target {
     #[serde(rename = "type")]
     pub target_type: OverrideType,
@@ -59,13 +59,13 @@ pub struct Target {
     pub import_declaration: ImportDeclarationConfig,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ThemeNameResolver {
     pub server: ResolverConfig,
     pub client: ResolverConfig,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ResolverConfig {
     pub directive: DirectiveType,
     #[serde(rename = "importDeclaration")]
@@ -105,14 +105,14 @@ pub enum OverrideType {
     Component,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Specifier {
     #[serde(rename = "type")]
     pub specifier_type: SpecifierType,
     pub name: String,
 }
 
-#[derive(Deserialize, PartialEq, Debug)]
+#[derive(Deserialize, PartialEq, Debug, Clone)]
 pub enum SpecifierType {
     ImportSpecifier,
     ImportDefaultSpecifier,

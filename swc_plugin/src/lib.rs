@@ -1,6 +1,9 @@
 pub mod file_logger;
 pub mod plugin_config;
 pub mod plugin_theme;
+pub mod plugin3;
+#[path = "plugin3/plugin3_config.rs"]
+pub mod plugin3_config;
 
 use swc_core::ecma::ast::*;
 use swc_core::ecma::visit::VisitMutWith;

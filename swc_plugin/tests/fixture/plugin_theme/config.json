@@ -18,7 +18,7 @@
             "type": "component",
             "directive": "client",
             "importDeclaration": {
-              "source": "@znode/custom1-package/component/signup",
+              "source": "@znode/base-package/component/signup",
               "specifier": {
                 "type": "ImportSpecifier",
                 "name": "SignUp"

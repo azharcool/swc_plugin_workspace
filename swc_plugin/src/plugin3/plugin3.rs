@@ -9,7 +9,7 @@ use swc_core::{
             Module, ModuleDecl, ModuleItem, Param, Pat, Program, Stmt, Str, TsEntityName, TsType,
             TsTypeAnn, TsTypeRef, VarDecl, VarDeclKind, VarDeclarator,
         },
-        visit::{VisitMut, VisitMutWith},
+        visit::{Visit, VisitMut, VisitMutWith},
     },
 };
 

@@ -1,0 +1,64 @@
+{
+  "themeConfig": {
+    "base": {
+      "target": "base-package",
+      "description": "Override only happen in base-package"
+    }
+  },
+  "themeNameResolver": {
+    "server": {
+      "directive": "server-only",
+      "importDeclaration": {
+        "source": "@znode/utils/theme-resolver/theme-resolver.server",
+        "specifiers": [
+          {
+            "type": "ImportDefaultSpecifier",
+            "name": "getThemeCookieServer"
+          }
+        ]
+      },
+      "variableDeclaration": {
+        "kind": "const",
+        "declarations": [
+          {
+            "type": "VariableDeclarator",
+            "id": {
+              "type": "Identifier",
+              "value": "themeName"
+            },
+            "init": {
+              "type": "AwaitExpression"
+            }
+          }
+        ]
+      }
+    },
+    "client": {
+      "directive": "client-only",
+      "importDeclaration": {
+        "source": "@znode/utils/theme-resolver/theme-resolver.client",
+        "specifiers": [
+          {
+            "type": "ImportDefaultSpecifier",
+            "name": "getThemeCookieClient"
+          }
+        ]
+      },
+      "variableDeclaration": {
+        "kind": "const",
+        "declarations": [
+          {
+            "type": "VariableDeclarator",
+            "id": {
+              "type": "Identifier",
+              "value": "themeName"
+            },
+            "init": {
+              "type": "AwaitExpression"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,26 +1,39 @@
-pub mod logger;
-//pub mod plugin1;
-pub mod plugin2;
+pub mod analyze;
+pub mod config;
+pub mod core;
+pub mod debug;
 
 use swc_core::ecma::ast::*;
-use swc_core::ecma::visit::VisitMutWith;
 use swc_core::plugin::{
     metadata::TransformPluginMetadataContextKind, plugin_transform,
     proxies::TransformPluginProgramMetadata,
 };
 
-//pub use plugin1::MyPlugin;
-pub use plugin2::MyPlugin2;
+use crate::config::PluginConfig;
+use crate::core::pipeline::run_pipeline;
 
 #[plugin_transform]
 pub fn process_program(mut program: Program, metadata: TransformPluginProgramMetadata) -> Program {
-    //let mut plugin = MyPlugin;
-    //program.visit_mut_with(&mut plugin);
+    let raw_config = metadata.get_transform_plugin_config();
 
-    if let Some(filename) = metadata.get_context(&TransformPluginMetadataContextKind::Filename) {
-        if filename.ends_with("signup/page.tsx") {
-            let mut plugin2 = MyPlugin2;
-            program.visit_mut_with(&mut plugin2);
+    let plugin_config: PluginConfig = match raw_config {
+        Some(config) => {
+            serde_json::from_str(&config).unwrap_or_else(|_| PluginConfig { debug: None })
+        }
+        None => PluginConfig { debug: None },
+    };
+
+    match &mut program {
+        Program::Module(module) => {
+            // Run Pipeline
+            if let Some(filename) =
+                metadata.get_context(&TransformPluginMetadataContextKind::Filename)
+            {
+                run_pipeline(module, plugin_config, filename);
+            };
+        }
+        Program::Script(script) => {
+            // Optional
         }
     }
 

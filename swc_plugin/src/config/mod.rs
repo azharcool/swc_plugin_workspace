@@ -1,4 +1,4 @@
-mod models;
+pub mod models;
 mod resolver;
 
-pub use models::{PluginConfig};
+pub use models::*;

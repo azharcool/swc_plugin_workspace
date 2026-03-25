@@ -1,10 +1,53 @@
 {
-  "themeConfig": {
-    "base": {
+  "themeConfig": [
+    {
       "target": "base-package",
-      "description": "Override only happen in base-package"
+      "description": "Override only happen in base-package",
+      "themeMappings": [
+        {
+          "file": "signup/page.tsx",
+          "type": "page",
+          "directive": "server",
+          "targets": [
+            {
+              "type": "Component",
+              "directive": "client",
+              "themeName": "base",
+              "package": "base",
+              "action": "",
+              "importDeclaration": {
+                "source": "@znode/base-package/components/signup",
+                "specifiers": [
+                  {
+                    "type": "ImportSpecifier",
+                    "value": "SignUp"
+                  }
+                ]
+              },
+              "themes": [
+                {
+                  "type": "Component",
+                  "directive": "client",
+                  "themeName": "custom1",
+                  "package": "custom1",
+                  "action": "",
+                  "importDeclaration": {
+                    "source": "@znode/custom1-package/component/signup",
+                    "specifiers": [
+                      {
+                        "type": "ImportSpecifier",
+                        "value": "SignUp"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
-  },
+  ],
   "themeNameResolver": {
     "server": {
       "directive": "server-only",
@@ -13,7 +56,7 @@
         "specifiers": [
           {
             "type": "ImportDefaultSpecifier",
-            "name": "getThemeCookieServer"
+            "value": "getThemeCookieServer"
           }
         ]
       },
@@ -29,6 +72,17 @@
             "init": {
               "type": "AwaitExpression"
             }
+          }
+        ]
+      },
+      "variable": {
+        "kind": "const",
+        "declarations": [
+          {
+            "name": "themeName",
+            "nature": "Await",
+            "value": "getThemeCookieServer",
+            "arguments": []
           }
         ]
       }
@@ -40,7 +94,7 @@
         "specifiers": [
           {
             "type": "ImportDefaultSpecifier",
-            "name": "getThemeCookieClient"
+            "value": "getThemeCookieClient"
           }
         ]
       },
@@ -58,7 +112,17 @@
             }
           }
         ]
+      },
+      "variable": {
+        "kind": "const",
+        "declarations": [{
+          "name": "themeName",
+          "nature": "Await",
+          "value": "getThemeCookieClient",
+          "arguments": []
+        }]
       }
     }
-  }
+  },
+  "debug": true
 }

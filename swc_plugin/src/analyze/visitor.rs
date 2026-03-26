@@ -125,7 +125,7 @@ impl AnalyzeVisitor {
       })
     }
 
-    pub fn create_variable_decl(&self, variable: &Variable) -> Decl {
+    pub fn create_variable_decl(&mut self, variable: &Variable) -> Decl {
         let kind = &variable.kind;
         let declarations = &variable.declarations;
 
@@ -134,6 +134,8 @@ impl AnalyzeVisitor {
         for declaration in declarations {
             // Input
             let name = &declaration.name;
+            self.state.wrapper_component_variable_ident = Some(name.clone());
+
             let nature = &declaration.nature; // Await, Call, Literal
             let value = &declaration.value;
             let arguments = &declaration.arguments; // [id, ...args]
@@ -232,6 +234,174 @@ impl AnalyzeVisitor {
 
         return decl;
     }
+
+    // CREATE JSX ELEMENT with Spread Attribute
+    pub fn create_jsx_element(&self, theme_name: Option<String>, value: String) -> JSXElement {
+        let spread_element = SpreadElement {
+            dot3_token: DUMMY_SP,
+            expr: Box::new(Expr::Ident(Ident {
+                span: DUMMY_SP,
+                sym: "props".into(),
+                optional: false,
+                ctxt: SyntaxContext::empty(),
+            })),
+        };
+
+        let jsx_opening_element = JSXOpeningElement {
+            span: DUMMY_SP,
+            name: JSXElementName::Ident(Ident {
+                span: DUMMY_SP,
+                sym: match theme_name {
+                    Some(name) => format!("{}__{}", value, name).into(),
+                    None => value.into(),
+                },
+                optional: false,
+                ctxt: SyntaxContext::empty(),
+            }),
+            attrs: vec![JSXAttrOrSpread::SpreadElement(spread_element)],
+            self_closing: true,
+            type_args: None,
+        };
+
+        let jsx_element = JSXElement {
+            span: DUMMY_SP,
+            opening: jsx_opening_element,
+            children: vec![],
+            closing: None,
+        };
+
+        return jsx_element;
+    }
+
+    pub fn create_theme_wrapper(&mut self, component_name: String) -> FnDecl {
+        let wrapper_name = format!("ThemeWrapper__{}", component_name);
+
+        self.state.theme_wrapper_component_name = Some(wrapper_name.clone());
+        self.state.target_component_name = Some(component_name.clone());
+
+        let ident = Ident {
+            span: DUMMY_SP,
+            sym: wrapper_name.clone().into(),
+            optional: false,
+            ctxt: SyntaxContext::empty(),
+        };
+
+        // Statments add later
+        // variable statement
+        // condition statement
+        // return statement -> default to returning the target component with spread props, e.g. <Component {...props} />
+        let stmts: BlockStmt = BlockStmt {
+            span: DUMMY_SP,
+            stmts: vec![],
+            ctxt: SyntaxContext::empty(),
+        };
+
+        let function_decl = FnDecl {
+            ident: ident,
+            declare: false,
+            function: Box::new(Function {
+                params: vec![],
+                decorators: vec![],
+                span: DUMMY_SP,
+                body: Some(stmts),
+                is_generator: false,
+                is_async: true,
+                type_params: None,
+                return_type: None,
+                ctxt: SyntaxContext::empty(),
+            }),
+        };
+
+        return function_decl;
+    }
+
+    fn create_condition_stmt(
+        &self,
+        variable_ident: String,
+        theme_name: String,
+        theme_jsx_element: JSXElement,
+    ) -> Stmt {
+        let ast_test = Expr::Bin(BinExpr {
+            span: DUMMY_SP,
+            op: BinaryOp::EqEqEq,
+            left: Box::new(Expr::Ident(Ident {
+                span: DUMMY_SP,
+                sym: variable_ident.into(),
+                optional: false,
+                ctxt: SyntaxContext::empty(),
+            })),
+            right: Box::new(Expr::Lit(Lit::Str(Str {
+                span: DUMMY_SP,
+                value: theme_name.clone().into(),
+                raw: Some(format!("\"{}\"", theme_name).into()),
+            }))),
+        });
+
+        let if_stmt = IfStmt {
+            span: DUMMY_SP,
+            test: Box::new(ast_test),
+            cons: Box::new(Stmt::Block(BlockStmt {
+                span: DUMMY_SP,
+                stmts: vec![Stmt::Return(ReturnStmt {
+                    span: DUMMY_SP,
+                    arg: Some(Box::new(Expr::JSXElement(Box::new(theme_jsx_element)))),
+                })],
+                ctxt: SyntaxContext::empty(),
+            })),
+            alt: None,
+        };
+        return Stmt::If(if_stmt);
+    }
+
+    pub fn prepare_theme_wrapper_component(
+        &self,
+        target_jsx_element: &JSXElement,
+        theme_condition_stmts: &Vec<Stmt>,
+        theme_variable_stmt: &Decl,
+        mut theme_wrapper_fn_decl: FnDecl,
+    ) -> FnDecl {
+        let mut stmts: Vec<Stmt> = vec![];
+
+        // const theme = await getThemeCookieServer();
+        stmts.push(Stmt::Decl(theme_variable_stmt.clone()));
+
+        // theme condition statements
+        // stmts.extend(theme_condition_stmts.clone());
+        //
+        stmts.extend(theme_condition_stmts.clone());
+
+        // FALLBACK: Return target component with spread props, e.g. <Component {...props} />
+        stmts.push(Stmt::Return(ReturnStmt {
+            span: DUMMY_SP,
+            arg: Some(Box::new(Expr::JSXElement(Box::new(
+                target_jsx_element.clone(),
+            )))),
+        }));
+
+        // ADDING STMTS TO FUNCTION BODY
+        theme_wrapper_fn_decl.function.body = Some(BlockStmt {
+            span: DUMMY_SP,
+            ctxt: SyntaxContext::empty(),
+            stmts,
+        });
+
+        // ADDING PARAMS TO FUNCTION DECLARATION (props)
+        theme_wrapper_fn_decl.function.params = vec![Param {
+            span: DUMMY_SP,
+            decorators: vec![],
+            pat: Pat::Ident(BindingIdent {
+                id: Ident {
+                    span: DUMMY_SP,
+                    sym: "props".into(),
+                    optional: false,
+                    ctxt: SyntaxContext::empty(),
+                },
+                type_ann: None,
+            }),
+        }];
+
+        return theme_wrapper_fn_decl;
+    }
 }
 
 impl Visit for AnalyzeVisitor {
@@ -279,9 +449,9 @@ impl Visit for AnalyzeVisitor {
         };
 
         // Get Target Themes Mapping
-        let targets = &self.theme_mapping.targets;
+        let targets = self.theme_mapping.targets.clone();
 
-        for target in targets {
+        for target in &targets {
             let target_nature = &target.nature;
 
             match target_nature {
@@ -291,21 +461,95 @@ impl Visit for AnalyzeVisitor {
                     // store target specifier value in state for later use when visiting import declarations
                     let target_import = target.import.clone();
                     let target_specifier = target_import.specifiers.first().unwrap();
-                    self.state.check_target_specifier = Some(target_specifier.value.clone());
 
-                    // Create ThemeComponent Wrapper
+                    self.state.check_target_specifier = Some(target_specifier.value.clone());
+                    // --------------------------------------
+
+                    // Create target JSX element and store in state for later injection
+                    let target_jsx_element =
+                        self.create_jsx_element(None, target_specifier.value.clone());
+
+                    self.state.target_jsx_element = Some(target_jsx_element);
+                    // --------------------------------------
+
+                    // Create ThemeComponent Wrapper and store in state for later injection
+                    let wrapper_component_decl =
+                        self.create_theme_wrapper(target_specifier.value.clone());
+
+                    self.state.theme_wrapper_component_fn_decl =
+                        Some(wrapper_component_decl.clone());
+                    // --------------------------------------
 
                     // loops themes and create import statements for each theme, store in state
                     let target_themes = &target.themes;
                     for theme in target_themes {
                         let theme_import = theme.import.clone();
                         let theme_name = theme.theme_name.clone();
+
+                        // CREATE IMPORT STATEMENT AND STORE IN STATE
                         let import_module_item =
                             self.create_import_decl(&theme_import, Some(&theme_name));
+
                         self.state
                             .theme_imports
                             .get_or_insert_with(Vec::new)
                             .push(import_module_item);
+                        // -------------------------------
+
+                        // CREATE JSX ELEMENT AND STORE IN STATE
+                        let theme_jsx_element = self.create_jsx_element(
+                            Some(theme_name.clone()),
+                            target_specifier.value.clone(),
+                        );
+
+                        self.state
+                            .theme_jsx_elements
+                            .get_or_insert_with(Vec::new)
+                            .push(theme_jsx_element.clone());
+                        // --------------------------------------
+
+                        // CREATE CONDITION STATEMENT AND STORE IN STATE
+                        let variable_ident = &self.state.wrapper_component_variable_ident.clone();
+                        if let Some(variable_ident) = variable_ident {
+                            let theme_if_stmt = self.create_condition_stmt(
+                                variable_ident.to_string(),
+                                theme_name.clone(),
+                                theme_jsx_element,
+                            );
+                            self.state
+                                .theme_wrapper_component_if_stmts
+                                .get_or_insert_with(Vec::new)
+                                .push(theme_if_stmt);
+                        }
+                    }
+
+                    // Prepare the Final theme wrapper component
+                    let target_jsx_element = &self.state.target_jsx_element;
+                    let theme_condition_stmts = &self.state.theme_wrapper_component_if_stmts;
+                    let theme_variable_stmt = &self.state.wrapper_component_variable_stmt;
+                    let theme_wrapper_fn_decl = &self.state.theme_wrapper_component_fn_decl;
+
+                    if let (
+                        Some(target_jsx_element),
+                        Some(theme_condition_stmts),
+                        Some(theme_variable_stmt),
+                        Some(theme_wrapper_fn_decl),
+                    ) = (
+                        target_jsx_element,
+                        theme_condition_stmts,
+                        theme_variable_stmt,
+                        theme_wrapper_fn_decl,
+                    ) {
+                        let theme_wrapper_fn_decl_mut = theme_wrapper_fn_decl.clone();
+                        let final_theme_wrapper_component = self.prepare_theme_wrapper_component(
+                            target_jsx_element,
+                            theme_condition_stmts,
+                            theme_variable_stmt,
+                            theme_wrapper_fn_decl_mut,
+                        );
+
+                        self.state.theme_wrapper_component =
+                            Some(final_theme_wrapper_component.clone());
                     }
                 }
 
@@ -346,25 +590,6 @@ impl Visit for AnalyzeVisitor {
                 }
             }
         });
-        node.visit_children_with(self);
-    }
-    
-
-    fn visit_fn_expr(&mut self, node: &FnExpr) {
-        debug!("Visiting function expression: {:#?}", node);
-        
-        if let Some(body) = &node.function.body {
-            body.stmts.iter().for_each(|item| {
-                debug!("Function body item: {:#?}", item);
-
-                if let Stmt::Return(return_stmt) = item {
-                    debug!("Found return statement: {:#?}", return_stmt);
-                }
-            });
-        }
-
-        // Get Signup jsx 
-        // Get Signup 
         node.visit_children_with(self);
     }
 }

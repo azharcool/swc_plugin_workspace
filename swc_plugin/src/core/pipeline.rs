@@ -1,4 +1,3 @@
-use crate::debug;
 use crate::transform::visitor::TransformVisitor;
 use crate::{analyze::visitor::AnalyzeVisitor, config::PluginConfig};
 use log::debug;
@@ -30,10 +29,9 @@ pub fn run_pipeline(module: &mut Module, config: PluginConfig, filename: String)
     // Analyzer
     let mut analyzer = AnalyzeVisitor::new(config.clone(), filename, found_theme_mapping.clone().unwrap());
     module.visit_with(&mut analyzer);
-    
 
     // State
-    debug!("Analyzer State afterV analysis: {:#?}", analyzer.state);
+    debug!("Analyzer State after analysis: {:#?}", analyzer.state);
 
     // Transformer
     let mut transform = TransformVisitor::new(config.clone(), analyzer.state, found_theme_mapping.unwrap());

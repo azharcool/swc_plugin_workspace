@@ -40,6 +40,23 @@
                       }
                     ]
                   }
+                },
+
+                {
+                  "nature": "Component",
+                  "directive": "client",
+                  "themeName": "custom2",
+                  "package": "custom2",
+                  "action": "",
+                  "import": {
+                    "source": "@znode/custom2-package/component/signup",
+                    "specifiers": [
+                      {
+                        "nature": "ImportSpecifier",
+                        "value": "SignUp"
+                      }
+                    ]
+                  }
                 }
               ]
             }

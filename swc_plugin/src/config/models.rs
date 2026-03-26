@@ -19,56 +19,30 @@ pub struct ThemeNameResolver {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ResolverConfig {
-    pub directive: DirectiveType,
-    #[serde(rename = "importDeclaration")]
-    pub import_declaration: ImportDeclaration,
-
-    #[serde(rename = "variableDeclaration")]
-    pub variable_declaration: VariableDeclaration,
-
+    pub directive: Directive,
+    pub import: Import,
     pub variable: Variable,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Variable {
     pub kind: String,
-    pub declarations: Vec<Decl>,
+    pub declarations: Vec<Declaration>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Decl {
+pub struct Declaration {
     pub name: String,
-    pub nature: Nature,
+    pub nature: DeclarationNature,
     pub value: String,
     pub arguments: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub enum Nature {
+pub enum DeclarationNature {
     Await,
     Call,
     Literal,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct VariableDeclaration {
-    pub kind: String,
-    pub declarations: Vec<Declaration>,
-}
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Declaration {
-    #[serde(rename = "type")]
-    pub declaration_type: String,
-    #[serde(rename = "id")]
-    pub declaration_id: DeclarationId,
-    pub init: Init,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct DeclarationId {
-    #[serde(rename = "type")]
-    pub declaration_id_type: String,
-    pub value: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -87,41 +61,36 @@ pub struct ThemeConfig {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ThemeMapping {
     pub file: String,
-    pub directive: DirectiveType,
+    pub directive: Directive,
     pub targets: Vec<Target>,
-    #[serde(rename = "type")]
-    pub theme_mapping_type: String,
+    pub nature: TargetNature,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Target {
-    #[serde(rename = "type")]
-    pub target_type: TargetType,
-    pub directive: DirectiveType,
+    pub nature: TargetNature,
+    pub directive: Directive,
     #[serde(rename = "themeName")]
     pub theme_name: String,
     pub package: String,
     pub action: String,
-    #[serde(rename = "importDeclaration")]
-    pub import_declaration: ImportDeclaration,
+    pub import: Import,
     pub themes: Vec<Theme>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Theme {
-    #[serde(rename = "type")]
-    pub target_type: TargetType,
-    pub directive: DirectiveType,
+    pub nature: TargetNature,
+    pub directive: Directive,
     #[serde(rename = "themeName")]
     pub theme_name: String,
     pub package: String,
     pub action: String,
-    #[serde(rename = "importDeclaration")]
-    pub import_declaration: ImportDeclaration,
+    pub import: Import,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub enum DirectiveType {
+pub enum Directive {
     #[serde(rename = "server")]
     Server,
 
@@ -136,26 +105,26 @@ pub enum DirectiveType {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub enum TargetType {
+pub enum TargetNature {
     Component,
     Agents,
+    Page
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct ImportDeclaration {
+pub struct Import {
     pub source: String,
     pub specifiers: Vec<Specifier>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Specifier {
-    #[serde(rename = "type")]
-    pub specifier_type: SpecifierType,
+    pub nature: SpecifierNature,
     pub value: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub enum SpecifierType {
+pub enum SpecifierNature {
     ImportSpecifier,
     ImportDefaultSpecifier,
     ImportNamespaceSpecifier,

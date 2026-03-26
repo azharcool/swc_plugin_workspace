@@ -6,36 +6,36 @@
       "themeMappings": [
         {
           "file": "signup/page.tsx",
-          "type": "page",
+          "nature": "Page",
           "directive": "server",
           "targets": [
             {
-              "type": "Component",
+              "nature": "Component",
               "directive": "client",
               "themeName": "base",
               "package": "base",
               "action": "",
-              "importDeclaration": {
+              "import": {
                 "source": "@znode/base-package/components/signup",
                 "specifiers": [
                   {
-                    "type": "ImportSpecifier",
+                    "nature": "ImportSpecifier",
                     "value": "SignUp"
                   }
                 ]
               },
               "themes": [
                 {
-                  "type": "Component",
+                  "nature": "Component",
                   "directive": "client",
                   "themeName": "custom1",
                   "package": "custom1",
                   "action": "",
-                  "importDeclaration": {
+                  "import": {
                     "source": "@znode/custom1-package/component/signup",
                     "specifiers": [
                       {
-                        "type": "ImportSpecifier",
+                        "nature": "ImportSpecifier",
                         "value": "SignUp"
                       }
                     ]
@@ -51,27 +51,12 @@
   "themeNameResolver": {
     "server": {
       "directive": "server-only",
-      "importDeclaration": {
+      "import": {
         "source": "@znode/utils/theme-resolver/theme-resolver.server",
         "specifiers": [
           {
-            "type": "ImportDefaultSpecifier",
+            "nature": "ImportDefaultSpecifier",
             "value": "getThemeCookieServer"
-          }
-        ]
-      },
-      "variableDeclaration": {
-        "kind": "const",
-        "declarations": [
-          {
-            "type": "VariableDeclarator",
-            "id": {
-              "type": "Identifier",
-              "value": "themeName"
-            },
-            "init": {
-              "type": "AwaitExpression"
-            }
           }
         ]
       },
@@ -89,38 +74,25 @@
     },
     "client": {
       "directive": "client-only",
-      "importDeclaration": {
+      "import": {
         "source": "@znode/utils/theme-resolver/theme-resolver.client",
         "specifiers": [
           {
-            "type": "ImportDefaultSpecifier",
+            "nature": "ImportDefaultSpecifier",
             "value": "getThemeCookieClient"
-          }
-        ]
-      },
-      "variableDeclaration": {
-        "kind": "const",
-        "declarations": [
-          {
-            "type": "VariableDeclarator",
-            "id": {
-              "type": "Identifier",
-              "value": "themeName"
-            },
-            "init": {
-              "type": "AwaitExpression"
-            }
           }
         ]
       },
       "variable": {
         "kind": "const",
-        "declarations": [{
-          "name": "themeName",
-          "nature": "Await",
-          "value": "getThemeCookieClient",
-          "arguments": []
-        }]
+        "declarations": [
+          {
+            "name": "themeName",
+            "nature": "Await",
+            "value": "getThemeCookieClient",
+            "arguments": []
+          }
+        ]
       }
     }
   },

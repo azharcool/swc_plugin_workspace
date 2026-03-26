@@ -1,10 +1,9 @@
 use std::fmt::format;
 
 use crate::config::models::{
-    ImportDeclaration, Specifier, SpecifierType, TargetType, ThemeMapping, VariableDeclaration,
+    Declaration, DeclarationNature, Directive, Import, Specifier, SpecifierNature, TargetNature,
+    ThemeMapping, Variable,
 };
-use crate::config::{Nature, Variable};
-use crate::debug;
 // use crate::config::{ImportDeclaration, TargetType, ThemeMapping};
 use crate::{analyze::state::AnalyzeState, config::PluginConfig};
 use log::debug;
@@ -52,7 +51,7 @@ impl TransformVisitor {
         return idents;
     }
 
-    pub fn import_exists(&self, module: &Module, import_declaration: &ImportDeclaration) -> bool {
+    pub fn import_exists(&self, module: &Module, import_declaration: &Import) -> bool {
         let source = &import_declaration.source;
         module.body.iter().any(|item| {
         matches!(item, ModuleItem::ModuleDecl(ModuleDecl::Import(decl)) if decl.src.value.to_string_lossy() == *source)
@@ -67,7 +66,7 @@ impl TransformVisitor {
         let mut ast_specifier: Vec<ImportSpecifier> = vec![];
 
         for specifier in specifiers {
-            let specifier_type = &specifier.specifier_type;
+            let specifier_type = &specifier.nature;
             let specifier_value = &specifier.value;
 
             let mut local_ident = Ident {
@@ -89,19 +88,19 @@ impl TransformVisitor {
                 };
             }
             ast_specifier.push(match specifier_type {
-                SpecifierType::ImportSpecifier => ImportSpecifier::Named(ImportNamedSpecifier {
+                SpecifierNature::ImportSpecifier => ImportSpecifier::Named(ImportNamedSpecifier {
                     span: DUMMY_SP,
                     local: local_ident,
                     imported: imported_ident,
                     is_type_only: false,
                 }),
-                SpecifierType::ImportDefaultSpecifier => {
+                SpecifierNature::ImportDefaultSpecifier => {
                     ImportSpecifier::Default(ImportDefaultSpecifier {
                         span: DUMMY_SP,
                         local: local_ident,
                     })
                 }
-                SpecifierType::ImportNamespaceSpecifier => {
+                SpecifierNature::ImportNamespaceSpecifier => {
                     ImportSpecifier::Namespace(ImportStarAsSpecifier {
                         span: DUMMY_SP,
                         local: local_ident,
@@ -115,7 +114,7 @@ impl TransformVisitor {
 
     pub fn create_import_decl(
         &self,
-        import_declaration: &ImportDeclaration,
+        import_declaration: &Import,
         theme_name: Option<&str>,
     ) -> ModuleItem {
         let source = &import_declaration.source;
@@ -179,7 +178,7 @@ impl TransformVisitor {
             let expr_ident = Expr::Ident(ident);
 
             let expr: Expr = match nature {
-                Nature::Await => {
+                DeclarationNature::Await => {
                     // getThemeCookieServer()
                     let call_expr = Expr::Call(CallExpr {
                         span: DUMMY_SP,
@@ -195,7 +194,7 @@ impl TransformVisitor {
                         arg: Box::new(call_expr),
                     })
                 }
-                Nature::Call => {
+                DeclarationNature::Call => {
                     // getThemeCookieServer()
                     Expr::Call(CallExpr {
                         span: DUMMY_SP,
@@ -215,7 +214,7 @@ impl TransformVisitor {
                         type_args: None,
                     })
                 }
-                Nature::Literal => Expr::Lit(Lit::Str(Str {
+                DeclarationNature::Literal => Expr::Lit(Lit::Str(Str {
                     span: DUMMY_SP,
                     value: value.clone().into(),
                     raw: Some(format!("\"{}\"", value).into()),
@@ -321,9 +320,14 @@ impl TransformVisitor {
 impl VisitMut for TransformVisitor {
     fn visit_mut_module(&mut self, node: &mut Module) {
         node.visit_mut_children_with(self);
+        
+        if let Some(theme_resolve_import) = &self.state.theme_resolve_import {
+            
+            self.insert_import(node, theme_resolve_import);
+        }
 
         if let Some(theme_resolver_config) = &self.state.theme_resolver_config {
-            let import_declaration = &theme_resolver_config.import_declaration;
+            let import_declaration = &theme_resolver_config.import;
 
             let already_exists = self.import_exists(node, import_declaration);
 
@@ -332,14 +336,19 @@ impl VisitMut for TransformVisitor {
                 return;
             }
 
-            let import_module_item = self.create_import_decl(import_declaration, None);
-            self.insert_import(node, &import_module_item);
+           // let import_module_item = self.create_import_decl(import_declaration, None);
+            //self.insert_import(node, &import_module_item);
 
-            let variable = &theme_resolver_config.variable;
-            let variable_stmt = self.create_variable_stmt(variable);
-            let theme_component_wrapper = self.create_theme_component_wrapper(variable_stmt);
-            
-            node.body.insert(node.body.len(), ModuleItem::Stmt(Stmt::Decl(theme_component_wrapper)));
+            //let variable = &theme_resolver_config.variable;
+            //let variable_stmt = self.create_variable_stmt(variable);
+
+           // self.state.wrapper_component_variable_stmt = Some(variable_stmt.clone());
+            // let theme_component_wrapper = self.create_theme_component_wrapper(variable_stmt);
+
+            // node.body.insert(
+            //     node.body.len(),
+            //     ModuleItem::Stmt(Stmt::Decl(theme_component_wrapper)),
+            // );
             // debug!(
             //     "Inserting variable declaration statement: {:?}",
             //     variable_stmt
@@ -350,29 +359,77 @@ impl VisitMut for TransformVisitor {
         let targets = &self.theme_mapping.targets;
 
         for target in targets {
-            let target_type = &target.target_type;
+            let target_type = &target.nature;
 
             match target_type {
-                TargetType::Component => {
-                    // let target_import_declaration_source = &target.import_declaration.source;
-                    let target_specifiers = &target.import_declaration.specifiers;
-
+                TargetNature::Component => {
+                    // let target_source = &target.import.source;
+                    let target_specifiers = &target.import.specifiers;
                     let existing_idents = &self.get_all_imported_idents(node);
 
-                    let already_exists = target_specifiers.iter().all(|specifier| {
-                        existing_idents
+                    let mut target_component = vec![];
+                    target_specifiers.iter().for_each(|item| {
+                        let matches: Vec<_> = existing_idents
                             .iter()
-                            .any(|ident| ident == &specifier.value)
+                            .filter(|ident| *ident == &item.value)
+                            .collect();
+                        target_component.extend(matches);
                     });
 
-                    if !already_exists {
+                 
+                    
+                    if target_component.iter().all(|matches| matches.is_empty())  {
                         continue;
                     }
+                    debug!("Matched Componenttarget: {:#?}", target_component);
 
+                    // let theme_component_wrapper = self.create_theme_component_wrapper(variable_stmt);
+
+                    /*
+                    debug!(
+                        "Existing imported identifiers in the module: {:?}",
+                        existing_idents
+                    ); */
+
+                    // let already_exists = target_specifiers.iter().all(|specifier| {
+                    //     existing_idents
+                    //         .iter()
+                    //         .any(|ident| ident == &specifier.value)
+                    // });
+
+                    // if !already_exists {
+                    //     continue;
+                    // }
+
+                    // target_specifiers.iter().for_each(|specifier| {
+                    //     let mut idents: Vec<String> = vec![];
+
+                    //     for item in &node.body {
+                    //         if let ModuleItem::ModuleDecl(ModuleDecl::Import(decl)) = item {
+                    //             for specifier in &decl.specifiers {
+                    //                 match specifier {
+                    //                     ImportSpecifier::Named(name) => {
+                    //                         specifier.value
+                    //                         // specifiernode name.local.sym.to_string()
+                    //                         //     && idents.push(name.local.sym.to_string())
+                    //                     }
+                    //                     ImportSpecifier::Default(default) => {}
+                    //                     ImportSpecifier::Namespace(namespace) => {
+                    //                     }
+                    //                 }
+                    //             }
+                    //         }
+                    //     }
+
+                    //     debug!(
+                    //         "Processing target specifier: {:?} with nature: {:?}",
+                    //         specifier.value, specifier.nature
+                    //     );
+                    // });
                     let target_themes = &target.themes;
 
                     for target_theme in target_themes {
-                        let import_declaration = &target_theme.import_declaration;
+                        let import_declaration = &target_theme.import;
                         let theme_name = &target_theme.theme_name;
                         //   let already_exists = self.import_exists(node, &import_declaration);
 
@@ -386,8 +443,11 @@ impl VisitMut for TransformVisitor {
                         self.insert_import(node, &import_module_item);
                     }
                 }
-                TargetType::Agents => {
+                TargetNature::Agents => {
                     debug!("Processing Agents target: {}", target.theme_name);
+                }
+                TargetNature::Page => {
+                    debug!("Processing Page target: {}", target.theme_name);
                 }
             }
         }

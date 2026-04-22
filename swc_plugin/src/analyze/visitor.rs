@@ -1,6 +1,7 @@
 use swc_core::common::DUMMY_SP;
 use swc_core::common::SyntaxContext;
 use swc_core::ecma::ast::Module;
+use swc_core::ecma::utils::private_ident;
 // Third-party imports
 use log::debug;
 use swc_core::ecma::ast::*;
@@ -276,15 +277,17 @@ impl AnalyzeVisitor {
     pub fn create_theme_wrapper(&mut self, component_name: String) -> FnDecl {
         let wrapper_name = format!("ThemeWrapper__{}", component_name);
 
-        self.state.theme_wrapper_component_name = Some(wrapper_name.clone());
+        let wrapper_ident = private_ident!(wrapper_name.clone());
+
+        self.state.theme_wrapper_ident = Some(wrapper_ident.clone());
         self.state.target_component_name = Some(component_name.clone());
 
-        let ident = Ident {
-            span: DUMMY_SP,
-            sym: wrapper_name.clone().into(),
-            optional: false,
-            ctxt: SyntaxContext::empty(),
-        };
+        // let ident = Ident {
+        //     span: DUMMY_SP,
+        //     sym: wrapper_name.clone().into(),
+        //     optional: false,
+        //     ctxt: SyntaxContext::empty(),
+        // };
 
         // Statments add later
         // variable statement
@@ -297,7 +300,7 @@ impl AnalyzeVisitor {
         };
 
         let function_decl = FnDecl {
-            ident: ident,
+            ident: wrapper_ident.clone(),
             declare: false,
             function: Box::new(Function {
                 params: vec![],
@@ -465,9 +468,19 @@ impl Visit for AnalyzeVisitor {
                     self.state.check_target_specifier = Some(target_specifier.value.clone());
                     // --------------------------------------
 
+                    // CREATE IMPORT STATEMENT AND STORE IN STATE
+                    let import_module_item =
+                        self.create_import_decl(&target_import, Some(&target.theme_name));
+
+                    self.state
+                        .theme_imports
+                        .get_or_insert_with(Vec::new)
+                        .push(import_module_item);
+                    // -------------------------------
+
                     // Create target JSX element and store in state for later injection
                     let target_jsx_element =
-                        self.create_jsx_element(None, target_specifier.value.clone());
+                        self.create_jsx_element(Some(target.theme_name.clone()), target_specifier.value.clone());
 
                     self.state.target_jsx_element = Some(target_jsx_element);
                     // --------------------------------------

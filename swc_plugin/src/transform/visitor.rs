@@ -28,13 +28,7 @@ impl TransformVisitor {
         }
     }
 
-    /*   pub fn replace_component_with_wrapper(
-        &self,
-        module: &mut Module,
-        target_component_name: &str,
-        theme_wrapper_component_name: &str,
-    ) {
-    } */
+    pub fn replace_specifier_value(&mut self) {}
 }
 
 impl VisitMut for TransformVisitor {
@@ -44,6 +38,35 @@ impl VisitMut for TransformVisitor {
         // Insert: import { getThemeCookieServer } from 'theme-resolver';
         if let Some(theme_resolve_import) = &self.state.theme_resolve_import {
             self.insert_import(node, theme_resolve_import);
+        }
+
+        // Remove: Original Target Import
+        // target_component_name = SignUp
+        // should Remove: import { SignUp } from "@znode/base-components/components/signup";
+        if let Some(target_component_name) = &self.state.target_component_name {
+            node.body.retain(|item| {
+                if let ModuleItem::ModuleDecl(ModuleDecl::Import(import_decl)) = item {
+                    let has_target_specifier =
+                        import_decl
+                            .specifiers
+                            .iter()
+                            .any(|specifier_item| match specifier_item {
+                                ImportSpecifier::Named(named_specifier) => {
+                                    named_specifier.local.sym == *target_component_name
+                                }
+                                ImportSpecifier::Default(default_specifier) => {
+                                    default_specifier.local.sym == *target_component_name
+                                }
+                                ImportSpecifier::Namespace(namespace_specifier) => {
+                                    namespace_specifier.local.sym == *target_component_name
+                                }
+                            });
+
+                    return !has_target_specifier;
+                }
+
+                return true;
+            })
         }
 
         // Insert: Import themes
@@ -66,23 +89,25 @@ impl VisitMut for TransformVisitor {
         node.visit_mut_children_with(self);
 
         // Replace: Target Component with Theme Component Wrapper Name
-        if let (Some(target_component_name), Some(theme_wrapper_component_name)) = (
+        if let (Some(target_component_name), Some(theme_wrapper_ident)) = (
             &self.state.target_component_name,
-            &self.state.theme_wrapper_component_name,
+            &self.state.theme_wrapper_ident,
         ) {
             if let JSXElementName::Ident(ref mut opening_ident) = node.opening.name {
                 // Already Replaced, Skip
-                if opening_ident.sym == theme_wrapper_component_name.as_str() {
+                if opening_ident.sym == theme_wrapper_ident.sym  {
                     return;
                 }
 
                 // Check and Replace: Opening and Closing Tags
                 if opening_ident.sym == target_component_name.as_str() {
-                    opening_ident.sym = theme_wrapper_component_name.clone().into();
+                    // opening_ident.sym = theme_wrapper_component_name.clone().into();
+                   node.opening.name = JSXElementName::Ident(theme_wrapper_ident.clone());
 
                     if let Some(closing) = &mut node.closing {
-                        if let JSXElementName::Ident(ref mut closing_ident) = closing.name {
-                            closing_ident.sym = theme_wrapper_component_name.clone().into();
+                        if let JSXElementName::Ident(_) = closing.name {
+                            // closing_ident.sym = theme_wrapper_component_name.clone().into();
+                            closing.name = JSXElementName::Ident(theme_wrapper_ident.clone());
                         }
                     }
                 }

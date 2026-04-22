@@ -22,8 +22,9 @@ pub struct AnalyzeState {
 
     pub theme_wrapper_component: Option<FnDecl>,
 
-    pub theme_wrapper_component_name: Option<String>,
+    pub theme_wrapper_ident: Option<Ident>,
     pub target_component_name: Option<String>,
+    pub target_specifier_value_with_theme: Option<String>,
 }
 
 impl AnalyzeState {
@@ -43,8 +44,9 @@ impl AnalyzeState {
             theme_wrapper_component_if_stmts: None,
             wrapper_component_variable_ident: None,
             theme_wrapper_component: None,
-            theme_wrapper_component_name: None,
+            theme_wrapper_ident: None,
             target_component_name: None,
+            target_specifier_value_with_theme: None,
         }
     }
 }

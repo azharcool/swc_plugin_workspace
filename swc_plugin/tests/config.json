@@ -41,7 +41,6 @@
                     ]
                   }
                 },
-
                 {
                   "nature": "Component",
                   "directive": "client",
@@ -54,6 +53,64 @@
                       {
                         "nature": "ImportSpecifier",
                         "value": "SignUp"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+
+        {
+          "file": "home/page.tsx",
+          "nature": "Page",
+          "directive": "server",
+          "targets": [
+            {
+              "nature": "Component",
+              "directive": "client",
+              "themeName": "base",
+              "package": "base",
+              "action": "",
+              "import": {
+                "source": "./client",
+                "specifiers": [
+                  {
+                    "nature": "ImportDefaultSpecifier",
+                    "value": "Client"
+                  }
+                ]
+              },
+              "themes": [
+                {
+                  "nature": "Component",
+                  "directive": "client",
+                  "themeName": "custom1",
+                  "package": "custom1",
+                  "action": "",
+                  "import": {
+                    "source": "@znode/custom1-package/component/client",
+                    "specifiers": [
+                      {
+                        "nature": "ImportSpecifier",
+                        "value": "Client"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "nature": "Component",
+                  "directive": "client",
+                  "themeName": "custom2",
+                  "package": "custom2",
+                  "action": "",
+                  "import": {
+                    "source": "@znode/custom2-package/component/client",
+                    "specifiers": [
+                      {
+                        "nature": "ImportDefaultSpecifier",
+                        "value": "Client"
                       }
                     ]
                   }
